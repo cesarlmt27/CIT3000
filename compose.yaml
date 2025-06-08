@@ -9,10 +9,12 @@ services:
       POSTGRES_USER: postgres # Usuario por defecto de la imagen postgres
       POSTGRES_DB: postgres   # Base de datos por defecto de la imagen postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Carga la contraseña desde un archivo .env
+      TZ: America/Santiago # Zona horaria para el sistema
     networks:
       - soa-net
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # Inicializa la base de datos con un script SQL
 
   bus:
     container_name: soabus

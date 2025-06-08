@@ -2,6 +2,7 @@
 import os
 import time
 from bus_connector import ServiceConnector
+from db_handler import list_backup_instances
 
 # --- Configuración del servicio ---
 # Lee la configuración desde las variables de entorno de Docker Compose.
@@ -25,9 +26,8 @@ def process_request(data_received):
     """
     print(f"[ServiceLogic] Procesando comando: '{data_received}'")
     
-    # Aquí es donde se añadirán las funcionalidades del servicio. Por ahora, solo se maneja un comando de ejemplo.
     if data_received == "listar":
-        return f"Respuesta procesada exitosamente por {SERVICE_NAME}"
+        return list_backup_instances()
     else:
         return f"Comando '{data_received}' no reconocido."
 
