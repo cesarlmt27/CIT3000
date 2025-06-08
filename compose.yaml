@@ -1,0 +1,107 @@
+name: sw
+
+services:
+  database:
+    container_name: postgresql
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: postgres # Usuario por defecto de la imagen postgres
+      POSTGRES_DB: postgres   # Base de datos por defecto de la imagen postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Carga la contraseña desde un archivo .env
+    networks:
+      - soa-net
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  bus:
+    container_name: soabus
+    image: jrgiadach/soabus:v1
+    restart: always
+    ports:
+      - "5000:5000"
+    networks:
+      - soa-net
+
+  backup-service:
+    build: ./backup-service
+    container_name: backup-service
+    restart: always
+    environment:
+      DB_HOST: database
+      DB_USER: postgres
+      DB_NAME: postgres
+      DB_PASS: ${POSTGRES_PASSWORD}
+      BUS_HOST: bus
+      SERVICE_NAME: bkpsv # Nombre de 5 letras para el servicio
+    networks:
+      - soa-net
+    depends_on:
+      - database
+      - bus
+
+  admin-service:
+    build: ./admin-service
+    container_name: admin-service
+    restart: always
+    environment:
+      DB_HOST: database
+      DB_USER: postgres
+      DB_NAME: postgres
+      DB_PASS: ${POSTGRES_PASSWORD}
+      BUS_HOST: bus
+      SERVICE_NAME: admsv # Nombre único de 5 letras
+    networks:
+      - soa-net
+    depends_on:
+      - database
+      - bus
+
+  cloud-service:
+    build: ./cloud-service
+    container_name: cloud-service
+    restart: always
+    environment:
+      BUS_HOST: bus
+      SERVICE_NAME: clcsv # Nombre único de 5 letras
+    networks:
+      - soa-net
+    depends_on:
+      - bus
+
+  restore-service:
+    build: ./restore-service
+    container_name: restore-service
+    restart: always
+    environment:
+      DB_HOST: database
+      DB_USER: postgres
+      DB_NAME: postgres
+      DB_PASS: ${POSTGRES_PASSWORD}
+      BUS_HOST: bus
+      SERVICE_NAME: rstrv # Nombre único de 5 letras
+    networks:
+      - soa-net
+    depends_on:
+      - database
+      - bus
+      - cloud-service
+
+  client:
+    build: ./client
+    container_name: client
+    environment:
+      BUS_HOST: bus
+    stdin_open: true
+    tty: true
+    networks:
+      - soa-net
+    depends_on:
+      - bus
+
+networks:
+  soa-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
