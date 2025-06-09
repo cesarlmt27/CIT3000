@@ -20,8 +20,6 @@ services:
     container_name: soabus
     image: jrgiadach/soabus:v1
     restart: always
-    ports:
-      - "5000:5000"
     networks:
       - soa-net
 
@@ -66,10 +64,14 @@ services:
     environment:
       BUS_HOST: bus
       SERVICE_NAME: clcsv # Nombre único de 5 letras
+      RCLONE_API_USER: ${RCLONE_API_USER}
+      RCLONE_API_PASS: ${RCLONE_API_PASS}
     networks:
       - soa-net
     depends_on:
       - bus
+    volumes:
+      - ./rclone_config:/config/rclone
 
   restore-service:
     build: ./restore-service

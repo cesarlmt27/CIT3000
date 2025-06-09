@@ -1,2 +1,6 @@
 .env
 venv
+rclone_config/
+__pycache__/
+*.pyc
+*.pyo

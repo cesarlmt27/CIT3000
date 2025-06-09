@@ -2,44 +2,43 @@
 """
 Punto de entrada principal para el cliente interactivo.
 
-Este script maneja la interfaz de usuario en la terminal, captura las
-entradas del usuario y utiliza el 'bus_connector' para comunicarse
-con los servicios a través del bus.
+Este script actúa como un despachador (dispatcher) que muestra un menú
+y llama a los manejadores (handlers) apropiados para cada opción.
 """
 import os
-from bus_connector import transact
+from handlers.cloud_handler import handle_cloud_config
+from handlers.admin_handler import handle_list_backups
 
 # --- Configuración del cliente ---
-# Lee la configuración desde las variables de entorno de Docker Compose.
 BUS_HOST = os.getenv("BUS_HOST", "localhost")
 BUS_PORT = 5000
 
+def show_menu():
+    """Imprime el menú principal de opciones y retorna la elección del usuario."""
+    print("\n--- Menú principal del sistema de respaldo ---")
+    print("1. Configurar proveedor de nube")
+    print("2. Listar respaldos existentes")
+    print("9. Salir")
+    return input("Selecciona una opción: ")
+
 if __name__ == "__main__":
     print("--- Cliente interactivo ---", flush=True)
-    print("Escribe 'salir' para terminar.", flush=True)
     
-    # Bucle principal para la interacción con el usuario.
+    # Bucle principal del menú.
     while True:
-        user_input = input("\nPresiona Enter para enviar 'listar' al servicio 'admsv' (o escribe 'salir'): ")
+        choice = show_menu()
         
-        # Condición para terminar el programa.
-        if user_input.lower() == 'salir':
+        if choice == '1':
+            # Llama a la función del handler de nube.
+            handle_cloud_config(BUS_HOST, BUS_PORT)
+        
+        elif choice == '2':
+            # Llama a la función del handler de administración.
+            handle_list_backups(BUS_HOST, BUS_PORT)
+            
+        elif choice == '9':
+            print("Cliente terminado.", flush=True)
             break
             
-        # Define la solicitud a enviar. Actualmente, solo se envía un de prueba.
-        target_service = "admsv"
-        message_to_send = "listar"
-        
-        print("-" * 20, flush=True)
-        
-        # Llama a la función de alto nivel para realizar la transacción.
-        # Toda la complejidad de la red está oculta en la función 'transact'.
-        r_service, r_status, r_content = transact(BUS_HOST, BUS_PORT, target_service, message_to_send)
-        
-        # Muestra al usuario la respuesta ya procesada y clasificada.
-        print(f"Respuesta del servicio '{r_service}'", flush=True)
-        print(f"Estado: {r_status}", flush=True)
-        print(f"Contenido: {r_content}", flush=True)
-        print("-" * 20, flush=True)
-
-    print("Cliente terminado.", flush=True)
+        else:
+            print("Opción no válida, por favor intenta de nuevo.", flush=True)

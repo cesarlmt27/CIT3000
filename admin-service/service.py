@@ -5,11 +5,9 @@ from bus_connector import ServiceConnector
 from db_handler import list_backup_instances
 
 # --- Configuración del servicio ---
-# Lee la configuración desde las variables de entorno de Docker Compose.
-# Provee valores por defecto para poder ejecutarlo localmente si es necesario.
-BUS_HOST = os.getenv("BUS_HOST", "localhost")
+BUS_HOST = os.getenv("BUS_HOST")
 BUS_PORT = 5000
-SERVICE_NAME = os.getenv("SERVICE_NAME", "admsv")
+SERVICE_NAME = os.getenv("SERVICE_NAME")
 
 def process_request(data_received):
     """
