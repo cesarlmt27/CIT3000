@@ -4,3 +4,4 @@ rclone_config/
 __pycache__/
 *.pyc
 *.pyo
+client/my_docs

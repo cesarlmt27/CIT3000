@@ -8,6 +8,7 @@ y llama a los manejadores (handlers) apropiados para cada opción.
 import os
 from handlers.cloud_handler import handle_cloud_config
 from handlers.admin_handler import handle_list_backups
+from handlers.backup_handler import handle_create_backup
 
 # --- Configuración del cliente ---
 BUS_HOST = os.getenv("BUS_HOST", "localhost")
@@ -18,6 +19,7 @@ def show_menu():
     print("\n--- Menú principal del sistema de respaldo ---")
     print("1. Configurar proveedor de nube")
     print("2. Listar respaldos existentes")
+    print("3. Crear nuevo respaldo")
     print("9. Salir")
     return input("Selecciona una opción: ")
 
@@ -33,8 +35,12 @@ if __name__ == "__main__":
             handle_cloud_config(BUS_HOST, BUS_PORT)
         
         elif choice == '2':
-            # Llama a la función del handler de administración.
+            # Llama a la función del handler de administración de respaldos.
             handle_list_backups(BUS_HOST, BUS_PORT)
+
+        elif choice == '3':
+            # Llama a la función del handler de respaldo.
+            handle_create_backup(BUS_HOST, BUS_PORT)
             
         elif choice == '9':
             print("Cliente terminado.", flush=True)

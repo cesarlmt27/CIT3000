@@ -1,12 +1,27 @@
+# cloud-service/service.py
 import os
 import time
 from bus_connector import ServiceConnector
-from rclone_handler import create_remote
+from rclone_handler import create_remote, upload_file
 
 # --- Configuración del servicio ---
 BUS_HOST = os.getenv("BUS_HOST")
 BUS_PORT = 5000
 SERVICE_NAME = os.getenv("SERVICE_NAME")
+ACTIVE_PROVIDER_FILE = "/config/active_provider.info" # Ruta a un archivo para guardar el proveedor activo.
+
+def set_active_provider(provider_name):
+    """Guarda el nombre del proveedor activo en un archivo."""
+    with open(ACTIVE_PROVIDER_FILE, "w") as f:
+        f.write(provider_name)
+
+def get_active_provider():
+    """Lee el nombre del proveedor activo desde el archivo."""
+    try:
+        with open(ACTIVE_PROVIDER_FILE, "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
 
 def process_request(data_received):
     """Procesa las solicitudes para el servicio de nube."""
@@ -20,10 +35,32 @@ def process_request(data_received):
             
             print(f"[ServiceLogic] Creando configuración de Rclone para '{provider}'...", flush=True)
             success, message = create_remote(provider, user, password)
+            
+            if success:
+                set_active_provider(provider)
+                
+            return message
+        except ValueError:
+            return "Error: Formato de comando de configuración incorrecto."
+        
+    elif command == "upload":
+        try:
+            # Leer cuál es el proveedor que se configuró previamente.
+            provider = get_active_provider()
+            
+            if not provider:
+                return "Error: No hay ningún proveedor de nube configurado. Por favor, configúrelo primero."
+
+            # Se construye el nombre del remote.
+            remote_name = f"{provider}_remote"
+            
+            _, cloud_path, file_content_b64 = parts
+            print(f"[ServiceLogic] Subiendo archivo a '{remote_name}:{cloud_path}'...", flush=True)
+            success, message = upload_file(remote_name, cloud_path, file_content_b64)
             return message
 
         except ValueError:
-            return "Error: Formato de comando de configuración incorrecto."
+            return "Error: Formato de comando de subida incorrecto."
     
     else:
         return f"Comando '{command}' no reconocido."
