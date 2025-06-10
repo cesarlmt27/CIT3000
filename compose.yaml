@@ -24,7 +24,9 @@ services:
       - soa-net
 
   backup-service:
-    build: ./backup-service
+    build:
+      context: .
+      dockerfile: ./backup-service/Dockerfile
     container_name: backup-service
     restart: always
     environment:
@@ -39,9 +41,14 @@ services:
     depends_on:
       - database
       - bus
+      - cloud-service
+    volumes:
+      - backup_data:/data
 
   admin-service:
-    build: ./admin-service
+    build:
+      context: .
+      dockerfile: ./admin-service/Dockerfile
     container_name: admin-service
     restart: always
     environment:
@@ -58,7 +65,9 @@ services:
       - bus
 
   cloud-service:
-    build: ./cloud-service
+    build:
+      context: .
+      dockerfile: ./cloud-service/Dockerfile
     container_name: cloud-service
     restart: always
     environment:
@@ -72,9 +81,12 @@ services:
       - bus
     volumes:
       - ./rclone_config:/config/rclone
+      - ./rclone_data:/data
 
   restore-service:
-    build: ./restore-service
+    build:
+      context: .
+      dockerfile: ./restore-service/Dockerfile
     container_name: restore-service
     restart: always
     environment:
@@ -92,7 +104,9 @@ services:
       - cloud-service
 
   client:
-    build: ./client
+    build:
+      context: .
+      dockerfile: ./client/Dockerfile
     container_name: client
     environment:
       BUS_HOST: bus
@@ -109,3 +123,4 @@ networks:
 
 volumes:
   postgres-data:
+  backup_data:
