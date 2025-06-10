@@ -25,7 +25,8 @@ def _read_payload_from_socket(sock):
     try:
         # Leer los 5 bytes que definen la longitud del payload.
         raw_msg_len = sock.recv(5)
-        if not raw_msg_len: return None
+        if not raw_msg_len: 
+            raise ConnectionError("La conexión fue cerrada por el otro extremo.")
         msg_len = int(raw_msg_len)
         
         # Recolectar los trozos (chunks) del mensaje hasta completar el largo esperado.
@@ -40,7 +41,7 @@ def _read_payload_from_socket(sock):
         return b''.join(chunks).decode('utf-8')
 
     except ValueError:
-        raise ValueError("Error al decodificar la longitud del mensaje.")
+        raise ValueError(f"Trama corrupta: se esperaba una longitud de 5 dígitos, pero se recibió '{raw_msg_len.decode(errors='ignore')}'")
 
 def _send_message(sock, service, data):
     """
@@ -55,7 +56,14 @@ def _send_message(sock, service, data):
         data (str): El contenido de los datos a enviar.
     """
     message_data = f"{service:5s}{data}"
-    message = f"{len(message_data):05d}{message_data}".encode('utf-8')
+
+    # Verificación de longitud del mensaje:
+    # El protocolo define un largo de 5 dígitos, por lo que el payload (Servi + Datos)
+    # no puede exceder 99999 bytes.
+    if len(message_data.encode('utf-8')) > 99999:
+        raise ValueError(f"El mensaje es demasiado grande para enviar ({len(message_data.encode('utf-8'))} bytes). El límite del payload es 99999 bytes.")
+
+    message = f"{len(message_data.encode('utf-8')):05d}{message_data}".encode('utf-8')
     print(f"-> [BusConnector] Enviando: {message.decode()}", flush=True)
     sock.sendall(message)
 
