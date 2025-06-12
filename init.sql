@@ -24,10 +24,3 @@ CREATE TABLE IF NOT EXISTS BackedUpFiles (
     file_hash VARCHAR(64) NOT NULL,
     FOREIGN KEY (backup_instance_id) REFERENCES BackupInstances(id) ON DELETE CASCADE
 );
-
-
--- Insertar datos de prueba solo en BackupInstances
-INSERT INTO BackupInstances (timestamp, total_size, user_defined_structure) VALUES
-(NOW() - INTERVAL '2 day', 102400, 'documentos/importantes'),
-(NOW() - INTERVAL '1 day', 512000, 'fotos/vacaciones'),
-(NOW(), 20480, 'trabajo/urgente');

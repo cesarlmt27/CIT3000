@@ -166,13 +166,14 @@ def transact(host, port, service_name, data_payload):
                 return "ERROR", "NK", "Conexión cerrada por el bus."
             
             # Imprime la transacción cruda para depuración
-            print(f"<- RAW Payload: {payload}", flush=True)
+            # print(f"<- RAW Payload: {payload}", flush=True)
             
             # Parsea el payload según el formato de respuesta del bus
             r_service = payload[:5]
             r_status = payload[5:7]
             r_content = payload[7:]
             
+            # Parsea el payload según el formato de respuesta del bus
             return r_service, r_status, r_content
         
     except Exception as e:
