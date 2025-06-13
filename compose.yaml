@@ -1,7 +1,7 @@
 name: sw
 
 services:
-  database:
+  database: # Base de datos PostgreSQL
     container_name: postgresql
     image: postgres:17
     restart: always
@@ -16,14 +16,14 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql # Inicializa la base de datos con un script SQL
 
-  bus:
+  bus: # Bus de servicios
     container_name: soabus
     image: jrgiadach/soabus:v1
     restart: always
     networks:
       - soa-net
 
-  backup-service:
+  backup-service: # "Servicio de copia de seguridad"
     build:
       context: .
       dockerfile: ./backup-service/Dockerfile
@@ -45,7 +45,7 @@ services:
     volumes:
       - backup_data:/data
 
-  admin-service:
+  admin-service: # "Servicio de administración de copias de seguridad"
     build:
       context: .
       dockerfile: ./admin-service/Dockerfile
@@ -64,7 +64,7 @@ services:
       - database
       - bus
 
-  cloud-service:
+  cloud-service: # "Servicio de administración de almacenamiento en la nube"
     build:
       context: .
       dockerfile: ./cloud-service/Dockerfile
@@ -83,7 +83,7 @@ services:
       - ./rclone_config:/config/rclone
       - ./rclone_data:/data
 
-  restore-service:
+  restore-service: # "Servicio de restauración"
     build:
       context: .
       dockerfile: ./restore-service/Dockerfile
@@ -103,7 +103,7 @@ services:
       - bus
       - cloud-service
 
-  client:
+  client: # Cliente para interactuar con el sistema
     build:
       context: .
       dockerfile: ./client/Dockerfile
