@@ -1,8 +1,9 @@
 # admin-service/service.py
 import os
 import time
+import json
 from bus_connector import ServiceConnector
-from db_handler import list_backup_instances
+from db_handler import list_backup_instances, list_auto_backup_jobs, update_auto_job_timestamp
 
 # --- Configuración del servicio ---
 BUS_HOST = os.getenv("BUS_HOST")
@@ -12,22 +13,59 @@ SERVICE_NAME = os.getenv("SERVICE_NAME")
 def process_request(data_received):
     """
     Contiene la lógica de negocio principal del servicio.
-    
-    Esta función recibe los datos ya limpios del conector del bus y
-    decide qué acción realizar.
-
-    Args:
-        data_received (str): El comando o dato recibido del cliente.
-
-    Returns:
-        str: La respuesta que se enviará de vuelta al cliente.
     """
-    print(f"[ServiceLogic] Procesando comando: '{data_received}'")
+    print(f"[ServiceLogic] Procesando solicitud: '{data_received}'", flush=True)
     
-    if data_received == "listar":
+    command_parts = data_received.split('|', 1)
+    command = command_parts[0]
+    payload_str = command_parts[1] if len(command_parts) > 1 else None
+
+    if command == "listar":
         return list_backup_instances()
+    
+    elif command == "list_auto_jobs":
+        page_number = 1 # Por defecto a la primera página
+        if payload_str:
+            try:
+                payload = json.loads(payload_str)
+                page_number = int(payload.get("page", 1))
+                if page_number < 1: # Asegurar que el número de página sea positivo
+                    page_number = 1
+            except (json.JSONDecodeError, ValueError, TypeError) as e:
+                print(f"[ServiceLogic] Payload inválido o faltante para list_auto_jobs: '{payload_str}'. Error: {e}. Usando página 1.", flush=True)
+                page_number = 1
+        else:
+            # Si no hay payload, se asume la primera página.
+            print("[ServiceLogic] No se recibió payload para list_auto_jobs. Usando página 1.", flush=True)
+        
+        jobs_page_data = list_auto_backup_jobs(page_number=page_number)
+        
+        if isinstance(jobs_page_data, dict) and jobs_page_data.get("status") == "ERROR":
+            return json.dumps(jobs_page_data) # db_handler devolvió un error
+        
+        return json.dumps(jobs_page_data) # Devuelve la página actual de trabajos como JSON
+
+    elif command == "update_job_timestamp":
+        if not payload_str:
+            return json.dumps({"status": "ERROR", "message": "Payload faltante para update_job_timestamp."})
+        try:
+            payload = json.loads(payload_str)
+            job_id = payload.get("job_id")
+            if job_id is None:
+                return json.dumps({"status": "ERROR", "message": "job_id faltante en el payload."})
+            
+            success, message = update_auto_job_timestamp(job_id)
+            if success:
+                return json.dumps({"status": "OK", "message": message})
+            else:
+                return json.dumps({"status": "ERROR", "message": message})
+        except json.JSONDecodeError:
+            return json.dumps({"status": "ERROR", "message": "Payload JSON malformado."})
+        except Exception as e:
+            return json.dumps({"status": "ERROR", "message": f"Error interno: {str(e)}"})
+            
     else:
-        return f"Comando '{data_received}' no reconocido."
+        return json.dumps({"status": "ERROR", "message": f"Comando '{command}' no reconocido."})
 
 def main():
     """

@@ -1,10 +1,3 @@
-# client/client.py
-"""
-Punto de entrada principal para el cliente interactivo.
-
-Este script actúa como un despachador (dispatcher) que muestra un menú
-y llama a los manejadores (handlers) apropiados para cada opción.
-"""
 import os
 from handlers.cloud_handler import handle_cloud_config
 from handlers.admin_handler import handle_list_backups
@@ -19,32 +12,32 @@ def show_menu():
     print("\n--- Menú principal del sistema de respaldo ---")
     print("1. Configurar proveedor de nube")
     print("2. Listar respaldos existentes")
-    print("3. Crear nuevo respaldo")
+    print("3. Crear nuevo respaldo (manual)")
     print("9. Salir")
     return input("Selecciona una opción: ")
 
-if __name__ == "__main__":
+def run_interactive_mode(bus_host, bus_port):
+    """Ejecuta el bucle del menú interactivo para el usuario."""
     print("--- Cliente interactivo ---", flush=True)
     
-    # Bucle principal del menú.
     while True:
         choice = show_menu()
         
         if choice == '1':
-            # Llama a la función del handler de nube.
-            handle_cloud_config(BUS_HOST, BUS_PORT)
-        
+            handle_cloud_config(bus_host, bus_port)
         elif choice == '2':
-            # Llama a la función del handler de administración de respaldos.
-            handle_list_backups(BUS_HOST, BUS_PORT)
-
+            handle_list_backups(bus_host, bus_port)
         elif choice == '3':
-            # Llama a la función del handler de respaldo.
-            handle_create_backup(BUS_HOST, BUS_PORT)
-            
+            handle_create_backup(bus_host, bus_port)
         elif choice == '9':
             print("Cliente terminado.", flush=True)
             break
-            
         else:
             print("Opción no válida, por favor intenta de nuevo.", flush=True)
+
+if __name__ == "__main__":
+    print("[MainClient] Iniciando cliente interactivo...", flush=True)
+
+    run_interactive_mode(BUS_HOST, BUS_PORT)
+
+    print("[MainClient] Saliendo del cliente interactivo...", flush=True)

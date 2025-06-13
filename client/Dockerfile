@@ -10,12 +10,14 @@ COPY ./common_package /app/common_package
 # Usar pip para instalar el paquete local en modo 'editable'
 RUN pip install -e ./common_package
 
-# Copiar el archivo de dependencias e intalarlas
-# COPY ./client/requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
+# Copiar el resto del código del cliente
+COPY ./client/ /app/
 
-# Copiar el resto del código
-COPY ./client/ .
+# Asegurarse de que el directorio de logs exista
+RUN mkdir -p /app/logs
+
+# Dar permisos de ejecución al script de inicio
+RUN chmod +x /app/start-client.sh
 
 # Comando de inicio del contenedor
-CMD ["python", "client.py"]
+CMD ["/app/start-client.sh"]
