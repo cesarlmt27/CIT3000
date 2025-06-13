@@ -43,7 +43,8 @@ services:
       - bus
       - cloud-service
     volumes:
-      - backup_data:/data
+      - primary_backup_data:/data/local_copy # Volumen para la copia primaria
+      - secondary_backup_data:/data/secondary_copy # Volumen para la copia secundaria
 
   admin-service: # "Servicio de administración de copias de seguridad"
     build:
@@ -123,4 +124,5 @@ networks:
 
 volumes:
   postgres-data:
-  backup_data:
+  primary_backup_data: # Volumen dedicado para la copia de respaldo primaria
+  secondary_backup_data: # Volumen dedicado para la copia de respaldo secundaria
