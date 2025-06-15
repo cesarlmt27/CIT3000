@@ -3,15 +3,17 @@ import base64
 import json
 from bus_connector import transact
 
-def execute_backup(bus_host, bus_port, source_path, structure):
+def execute_backup(bus_host, bus_port, source_path, structure, auto_job_id=None):
     """
     Ejecuta el proceso de respaldo de forma no interactiva.
     Escanea la ruta de origen, procesa archivos y se comunica con el backup-service.
     """
     print(f"\n[BackupExecutor] Iniciando respaldo para: {source_path} -> {structure}")
+    if auto_job_id:
+        print(f"[BackupExecutor] Este es un respaldo automático del trabajo ID: {auto_job_id}")
 
     if not os.path.exists(source_path):
-        print(f"[BackupExecutor] Error: La ruta de origen '{source_path}' no existe.")
+        print(f"[BackupExecutor] Error: La ruta de origen especificada '{source_path}' no existe o no es accesible desde el cliente.")
         return False
 
     files_to_process_paths = []
@@ -46,6 +48,9 @@ def execute_backup(bus_host, bus_port, source_path, structure):
             files_metadata_for_begin.append({"relative_path": relative_path})
 
         begin_payload = {"structure": structure, "files_to_backup": files_metadata_for_begin}
+        if auto_job_id is not None:
+            begin_payload["auto_job_id"] = auto_job_id
+        
         message_to_send = f"begin_backup|{json.dumps(begin_payload)}"
         
         r_service, r_status, r_content = transact(bus_host, bus_port, target_service, message_to_send)
@@ -126,7 +131,7 @@ def handle_create_backup(bus_host, bus_port):
     Guía al usuario para seleccionar un archivo o un directorio y crear un respaldo.
     """
     print("\n--- Crear nuevo respaldo (manual) ---")
-    path_input = input("Introduce la ruta completa del archivo o directorio a respaldar: ")
+    path_input = input("Introduce la ruta del archivo o directorio a respaldar: ")
     structure = input("Introduce una estructura de directorios para organizar el respaldo (ej. 'documentos/importantes'): ")
 
     if not path_input or not structure:

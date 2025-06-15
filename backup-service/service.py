@@ -38,7 +38,8 @@ def process_request(data_received):
     if command == "begin_backup":
         try:
             structure = payload['structure']
-            files_to_backup = payload['files_to_backup'] # Lista de {"relative_path": "..."}
+            files_to_backup = payload['files_to_backup']
+            auto_job_id = payload.get('auto_job_id')
             
             tx_id = uuid.uuid4().hex
             active_transactions[tx_id] = {
@@ -46,9 +47,10 @@ def process_request(data_received):
                 "expected_files": set(f['relative_path'] for f in files_to_backup),
                 "processed_files_db_meta": [],
                 "temp_files_on_disk": [],
-                "status": "pending"
+                "status": "pending",
+                "auto_job_id": auto_job_id
             }
-            print(f"[ServiceLogic] Transacción {tx_id} iniciada para {len(files_to_backup)} archivos.", flush=True)
+            print(f"[ServiceLogic] Transacción {tx_id} iniciada para {len(files_to_backup)} archivos. AutoJob ID: {auto_job_id}", flush=True)
             return json.dumps({"status": "OK", "transaction_id": tx_id})
         except Exception as e:
             return json.dumps({"status": "ERROR", "message": f"Error al iniciar respaldo: {str(e)}"})
@@ -150,7 +152,7 @@ def process_request(data_received):
                  cleanup_temp_files(tx_data["temp_files_on_disk"]) # Limpiar por si acaso
                  return json.dumps({"status": "OK", "message": "Respaldo finalizado, pero no se procesaron archivos para guardar en BD."})
 
-            save_backup_records(tx_data["structure"], tx_data["processed_files_db_meta"])
+            save_backup_records(tx_data["structure"], tx_data["processed_files_db_meta"], auto_job_id=tx_data.get("auto_job_id"))
             # Los archivos temporales ya no son "temporales" si la BD se actualizó, son las copias locales.
             # No se borran en caso de éxito.
             print(f"[ServiceLogic] Transacción {tx_id} completada exitosamente.", flush=True)

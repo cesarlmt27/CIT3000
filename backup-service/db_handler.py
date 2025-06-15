@@ -12,7 +12,7 @@ def get_db_connection():
         print(f"[DBHandler] Error al conectar: {e}")
         return None
 
-def save_backup_records(structure, files_metadata):
+def save_backup_records(structure, files_metadata, auto_job_id=None):
     """
     Guarda los registros de un nuevo respaldo en la base de datos.
 
@@ -23,26 +23,27 @@ def save_backup_records(structure, files_metadata):
         structure (str): La estructura de directorios definida por el usuario.
         files_metadata (list): Una lista de diccionarios, donde cada uno
                                contiene 'relative_path', 'hash' y 'size'.
+        auto_job_id (int, optional): El ID del trabajo automático que originó este respaldo.
     """
     conn = get_db_connection()
     if conn is None:
         raise Exception("No se pudo conectar a la base de datos para guardar el respaldo.")
     
-    # Se calcula el tamaño total sumando el tamaño de cada archivo.
     total_size = sum(f['size'] for f in files_metadata)
 
     try:
-        # 'with' asegura que el cursor se cierre.
         with conn.cursor() as cur:
-            # Insertar la instancia principal del respaldo y obtener su ID.
+            sql_insert_instance = """
+                INSERT INTO BackupInstances (timestamp, total_size, user_defined_structure, auto_job_id) 
+                VALUES (%s, %s, %s, %s) RETURNING id
+            """
             cur.execute(
-                "INSERT INTO BackupInstances (timestamp, total_size, user_defined_structure) VALUES (%s, %s, %s) RETURNING id",
-                (datetime.now(), total_size, structure)
+                sql_insert_instance,
+                (datetime.now(), total_size, structure, auto_job_id)
             )
             instance_id = cur.fetchone()[0]
-            print(f"[DBHandler] Creada BackupInstance con ID: {instance_id}", flush=True)
+            print(f"[DBHandler] Creada BackupInstance con ID: {instance_id}, AutoJob ID: {auto_job_id}", flush=True)
 
-            # Iterar sobre los metadatos para insertar cada archivo individualmente.
             for file_meta in files_metadata:
                 print(f"[DBHandler] Insertando registro para: {file_meta['relative_path']}", flush=True)
                 cur.execute(

@@ -3,7 +3,7 @@ import os
 import time
 import json
 from bus_connector import ServiceConnector
-from db_handler import list_backup_instances, list_auto_backup_jobs, update_auto_job_timestamp
+from db_handler import list_backup_instances, list_auto_backup_jobs, update_auto_job_timestamp, add_auto_backup_job
 
 # --- Configuración del servicio ---
 BUS_HOST = os.getenv("BUS_HOST")
@@ -21,7 +21,19 @@ def process_request(data_received):
     payload_str = command_parts[1] if len(command_parts) > 1 else None
 
     if command == "listar":
-        return list_backup_instances()
+        page_number = 1
+        if payload_str:
+            try:
+                payload = json.loads(payload_str)
+                page_number = int(payload.get("page", 1))
+                if page_number < 1: page_number = 1
+            except (json.JSONDecodeError, ValueError, TypeError) as e:
+                print(f"[ServiceLogic] Payload inválido para listar: '{payload_str}'. Usando página 1. Error: {e}", flush=True)
+                page_number = 1
+        else:
+             print("[ServiceLogic] No se recibió payload para listar. Usando página 1.", flush=True)
+        
+        return list_backup_instances(page_number=page_number)
     
     elif command == "list_auto_jobs":
         page_number = 1 # Por defecto a la primera página
@@ -63,6 +75,32 @@ def process_request(data_received):
             return json.dumps({"status": "ERROR", "message": "Payload JSON malformado."})
         except Exception as e:
             return json.dumps({"status": "ERROR", "message": f"Error interno: {str(e)}"})
+            
+    elif command == "add_auto_job":
+        if not payload_str:
+            return json.dumps({"status": "ERROR", "message": "Payload faltante para add_auto_job."})
+        try:
+            payload = json.loads(payload_str)
+            job_name = payload.get("job_name")
+            source_path = payload.get("source_path")
+            destination_structure = payload.get("destination_structure")
+            frequency_hours = payload.get("frequency_hours")
+
+            if not all([job_name, source_path, destination_structure, frequency_hours is not None]):
+                return json.dumps({"status": "ERROR", "message": "Faltan campos obligatorios en el payload (job_name, source_path, destination_structure, frequency_hours)."})
+
+            if not isinstance(frequency_hours, int) or frequency_hours <= 0:
+                return json.dumps({"status": "ERROR", "message": "frequency_hours debe ser un entero positivo."})
+
+            success, message = add_auto_backup_job(job_name, source_path, destination_structure, frequency_hours)
+            if success:
+                return json.dumps({"status": "OK", "message": message})
+            else:
+                return json.dumps({"status": "ERROR", "message": message})
+        except json.JSONDecodeError:
+            return json.dumps({"status": "ERROR", "message": "Payload JSON malformado para add_auto_job."})
+        except Exception as e:
+            return json.dumps({"status": "ERROR", "message": f"Error interno al procesar add_auto_job: {str(e)}"})
             
     else:
         return json.dumps({"status": "ERROR", "message": f"Comando '{command}' no reconocido."})

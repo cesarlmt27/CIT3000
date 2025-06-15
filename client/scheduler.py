@@ -95,12 +95,8 @@ def scheduler_loop(bus_host, bus_port):
                             
                             if should_run:
                                 print(f"[SchedulerScript] Ejecutando trabajo ID {job_id}: {source_path} -> {dest_structure}", flush=True)
-                                effective_source_path = source_path 
-                                if not os.path.isabs(source_path):
-                                     effective_source_path = os.path.join("/app", source_path)
-                                     print(f"[SchedulerScript] Ruta relativa detectada. Usando ruta efectiva: {effective_source_path}", flush=True)
-                                
-                                success = execute_backup(bus_host, bus_port, effective_source_path, dest_structure)
+
+                                success = execute_backup(bus_host, bus_port, source_path, dest_structure, auto_job_id=job_id)
                                 
                                 if success:
                                     print(f"[SchedulerScript] Trabajo ID {job_id} completado exitosamente. Actualizando timestamp.", flush=True)
