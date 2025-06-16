@@ -6,10 +6,10 @@ services:
     image: postgres:17
     restart: always
     environment:
+      TZ: ${TIME_ZONE} # Zona horaria para el sistema
       POSTGRES_USER: postgres # Usuario por defecto de la imagen postgres
       POSTGRES_DB: postgres   # Base de datos por defecto de la imagen postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Carga la contraseña desde un archivo .env
-      TZ: America/Santiago # Zona horaria para el sistema
     networks:
       - soa-net
     volumes:
@@ -30,6 +30,7 @@ services:
     container_name: backup-service
     restart: always
     environment:
+      TZ: ${TIME_ZONE} # Zona horaria para el sistema
       DB_HOST: database
       DB_USER: postgres
       DB_NAME: postgres
@@ -53,6 +54,7 @@ services:
     container_name: admin-service
     restart: always
     environment:
+      TZ: ${TIME_ZONE} # Zona horaria para el sistema    
       DB_HOST: database
       DB_USER: postgres
       DB_NAME: postgres
@@ -72,6 +74,7 @@ services:
     container_name: cloud-service
     restart: always
     environment:
+      TZ: ${TIME_ZONE} # Zona horaria para el sistema
       BUS_HOST: bus
       SERVICE_NAME: clcsv # Nombre único de 5 letras
       RCLONE_API_USER: ${RCLONE_API_USER}
@@ -91,6 +94,7 @@ services:
     container_name: restore-service
     restart: always
     environment:
+      TZ: ${TIME_ZONE} # Zona horaria para el sistema
       DB_HOST: database
       DB_USER: postgres
       DB_NAME: postgres
@@ -113,6 +117,7 @@ services:
       dockerfile: ./client/Dockerfile
     container_name: client
     environment:
+      TZ: ${TIME_ZONE} # Zona horaria para el sistema
       BUS_HOST: bus
     stdin_open: true
     tty: true

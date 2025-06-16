@@ -33,6 +33,6 @@ def handle_cloud_config(bus_host, bus_port):
     r_service, r_status, r_content = transact(bus_host, bus_port, target_service, message_to_send)
 
     # Muestra la respuesta del servicio al usuario.
-    print(f"Respuesta del servicio '{r_service}' (Estado: {r_status})")
+    # print(f"Respuesta del servicio '{r_service}' (Estado: {r_status})")
     print(f"Contenido: {r_content}")
     print("-" * 20)

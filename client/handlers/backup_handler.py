@@ -107,7 +107,7 @@ def execute_backup(bus_host, bus_port, source_path, structure, auto_job_id=None)
         r_service, r_status, r_content = transact(bus_host, bus_port, target_service, message_to_send)
         response = json.loads(r_content)
 
-        print(f"[BackupExecutor] Respuesta final del servicio '{r_service}' (Estado: {r_status})")
+        # print(f"[BackupExecutor] Respuesta final del servicio '{r_service}' (Estado: {r_status})")
         print(f"Resultado: {response.get('message', r_content)}")
         return response.get("status") == "OK"
 

@@ -204,7 +204,7 @@ def add_auto_backup_job(job_name, source_path, destination_structure, frequency_
             )
             job_id = cur.fetchone()[0]
             conn.commit()
-            return True, f"Trabajo de respaldo automático '{job_name}' (ID: {job_id}) creado exitosamente."
+            return True, f"Trabajo de respaldo automático '{job_name}' creado exitosamente."
     except Exception as e:
         print(f"[DBHandler] Error al añadir trabajo automático: {e}", flush=True)
         conn.rollback()

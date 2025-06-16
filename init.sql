@@ -28,10 +28,10 @@ CREATE TABLE IF NOT EXISTS BackedUpFiles (
 
 -- Datos de prueba para AutoBackupJobs
 INSERT INTO AutoBackupJobs (job_name, source_path, destination_structure, frequency_hours, last_run_timestamp) VALUES
-('Documentos Diarios', 'my_docs/files/universidad/tesis', 'backups/documentos_diarios', 24, NULL), -- Debería ejecutarse al iniciar
-('Fotos Semanales', 'my_docs/files/universidad/mh.md', 'backups/fotos_semanales', 168, '2023-01-01 10:00:00'), -- Debería ejecutarse (fecha muy antigua)
-('Codigo Importante Cada Hora', 'my_docs/files/universidad/pdi.md', 'backups/codigo_fuente', 1, NOW() - INTERVAL '2 hours'), -- Debería ejecutarse (hace 2 horas)
-('Reportes Mensuales', 'my_docs/files/mercado.txt', 'backups/reportes_mensuales', 720, NOW() - INTERVAL '1 day'); -- No debería ejecutarse si frequency_hours es mayor a 24 y se corrió ayer. Ajustar según necesidad.
+('Documentos de tesis', 'my_docs/files/universidad/tesis', 'backups/universidad', 24, NULL), -- Debería ejecutarse al iniciar
+('Metaheurística', 'my_docs/files/universidad/mh.md', 'backups/universidad', 168, '2023-01-01 10:00:00'), -- Debería ejecutarse (fecha muy antigua)
+('Procesamiento', 'my_docs/files/universidad/pdi.md', 'backups/universidad', 1, NOW() - INTERVAL '2 hours'), -- Debería ejecutarse (hace 2 horas)
+('Lista del mercado', 'my_docs/files/mercado.txt', 'backups/documentos_diarios', 720, NOW() - INTERVAL '1 day'); -- No debería ejecutarse si frequency_hours es mayor a 24 y se corrió ayer. Ajustar según necesidad.
 
 -- Ejemplo de un trabajo que NO debería ejecutarse inmediatamente si la frecuencia es, por ejemplo, de 24 horas.
 INSERT INTO AutoBackupJobs (job_name, source_path, destination_structure, frequency_hours, last_run_timestamp) VALUES

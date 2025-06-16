@@ -64,7 +64,7 @@ def _send_message(sock, service, data):
         raise ValueError(f"El mensaje es demasiado grande para enviar ({len(message_data.encode('utf-8'))} bytes). El límite del payload es 99999 bytes.")
 
     message = f"{len(message_data.encode('utf-8')):05d}{message_data}".encode('utf-8')
-    print(f"-> [BusConnector] Enviando: {message.decode()}", flush=True)
+    # print(f"-> [BusConnector] Enviando: {message.decode()}", flush=True)
     sock.sendall(message)
 
 

@@ -20,7 +20,7 @@ def handle_list_backups(bus_host, bus_port):
         
         print("--------------------")
         r_service, r_status, r_content = transact(bus_host, bus_port, target_service, message_to_send)
-        print(f"Respuesta del servicio '{r_service}' (Estado: {r_status})")
+        # print(f"Respuesta del servicio '{r_service}' (Estado: {r_status})")
         
         if r_status == "OK":
             print(r_content)
@@ -81,11 +81,11 @@ def handle_configure_auto_backup(bus_host, bus_port):
         command = "add_auto_job"
         message_to_send = f"{command}|{payload_json}"
 
-        print("\nEnviando configuración de respaldo automático al servicio de administración...")
+        print("\nEnviando configuración de respaldo automático...")
         print("-" * 20)
         r_service, r_status, r_content = transact(bus_host, bus_port, target_service, message_to_send)
 
-        print(f"Respuesta del servicio '{r_service}' (Estado: {r_status})")
+        # print(f"Respuesta del servicio '{r_service}' (Estado: {r_status})")
         try:
             response_data = json.loads(r_content)
             print(f"Mensaje: {response_data.get('message', r_content)}")
