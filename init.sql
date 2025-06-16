@@ -35,4 +35,4 @@ INSERT INTO AutoBackupJobs (job_name, source_path, destination_structure, freque
 
 -- Ejemplo de un trabajo que NO debería ejecutarse inmediatamente si la frecuencia es, por ejemplo, de 24 horas.
 INSERT INTO AutoBackupJobs (job_name, source_path, destination_structure, frequency_hours, last_run_timestamp) VALUES
-('Backup Reciente', 'my_docs/files/password_manager.md', 'backups/recientes', 24, NOW() - INTERVAL '5 hours'); -- No se ejecutará si la frecuencia es 24h y solo han pasado 5h
+('Backup reciente', 'my_docs/files/password_manager.md', 'backups/recientes', 24, NOW() - INTERVAL '5 hours'); -- No se ejecutará si la frecuencia es 24h y solo han pasado 5h
