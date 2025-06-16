@@ -164,6 +164,49 @@ def process_request(data_received):
             error_message = str(e)
             detailed_error = f"Error al guardar en BD, cambios en disco revertidos. Causa: {error_message[:100]}"
             return json.dumps({"status": "ERROR", "message": detailed_error})
+        
+    elif command == "delete_local_files":
+        try:
+            # Espera payload: {"structure": "backup_structure", "relative_paths": ["file1", "file2"]}
+            instance_structure = payload.get("structure")
+            relative_paths = payload.get("relative_paths")
+
+            if not instance_structure or not isinstance(relative_paths, list):
+                return json.dumps({"status": "ERROR", "message": "Payload incorrecto para delete_local_files. Se requiere 'structure' y una lista 'relative_paths'."})
+
+            base_primary_path = "/data/local_copy"
+            base_secondary_path = "/data/secondary_copy"
+            
+            deleted_count = 0
+            errors = []
+
+            for rel_path in relative_paths:
+                safe_rel_path = rel_path.replace("\\", "/") # Asegurar separadores
+                
+                path_primary = os.path.join(base_primary_path, instance_structure, safe_rel_path)
+                path_secondary = os.path.join(base_secondary_path, instance_structure, safe_rel_path)
+
+                for p_to_delete in [path_primary, path_secondary]:
+                    if os.path.exists(p_to_delete):
+                        try:
+                            os.remove(p_to_delete)
+                            print(f"[ServiceLogic] Archivo local eliminado: {p_to_delete}", flush=True)
+                            deleted_count +=1 # Contar cada archivo físico eliminado
+                        except Exception as e_del:
+                            err_msg = f"Error al eliminar archivo local '{p_to_delete}': {str(e_del)}"
+                            print(f"[ServiceLogic] {err_msg}", flush=True)
+                            errors.append(err_msg)
+                    else:
+                        print(f"[ServiceLogic] Archivo local no encontrado para eliminar (puede ser normal si ya se borró o no existía): {p_to_delete}", flush=True)
+
+            if not errors:
+                return json.dumps({"status": "OK", "message": f"Archivos locales procesados para eliminación. {deleted_count} archivos físicos eliminados."})
+            else:
+                return json.dumps({"status": "ERROR", "message": f"Se encontraron errores al eliminar archivos locales: {'; '.join(errors)}"})
+
+        except Exception as e:
+            print(f"[ServiceLogic] Error inesperado en delete_local_files: {e}", flush=True)
+            return json.dumps({"status": "ERROR", "message": f"Error interno del servidor en delete_local_files: {str(e)}"})
     else:
         return json.dumps({"status": "ERROR", "message": f"Comando '{command}' no reconocido."})
 

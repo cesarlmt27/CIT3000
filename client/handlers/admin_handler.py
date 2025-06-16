@@ -97,3 +97,44 @@ def handle_configure_auto_backup(bus_host, bus_port):
         print("Error: La frecuencia debe ser un número entero de horas.")
     except Exception as e:
         print(f"Ocurrió un error inesperado: {e}")
+
+def handle_delete_backup(bus_host, bus_port):
+    """
+    Solicita al usuario el ID de una instancia de respaldo para eliminarla.
+    """
+    print("\n--- Eliminar respaldo existente ---")
+    try:
+        instance_id_str = input("Introduce el ID de la instancia de respaldo a eliminar: ")
+        if not instance_id_str.isdigit():
+            print("Error: El ID de la instancia debe ser un número.")
+            return
+        instance_id = int(instance_id_str)
+
+        confirm = input(f"¿Estás seguro de que deseas eliminar el respaldo con ID {instance_id} y todas sus copias (nube, local, secundaria)? Esta acción no se puede deshacer. (s/n): ").strip().lower()
+        if confirm != 's':
+            print("Eliminación cancelada.")
+            return
+
+        payload_dict = {"instance_id": instance_id}
+        payload_json = json.dumps(payload_dict)
+        
+        target_service = "admsv"
+        command = "delete_backup"
+        message_to_send = f"{command}|{payload_json}"
+
+        print(f"\nSolicitando eliminación del respaldo ID {instance_id}...")
+        print("-" * 20)
+        r_service, r_status, r_content = transact(bus_host, bus_port, target_service, message_to_send)
+
+        # print(f"Respuesta del servicio '{r_service}' (Estado: {r_status})")
+        try:
+            response_data = json.loads(r_content)
+            print(f"Mensaje: {response_data.get('message', r_content)}")
+        except json.JSONDecodeError:
+            print(f"Contenido: {r_content}")
+        print("-" * 20)
+
+    except ValueError:
+        print("Error: El ID de la instancia debe ser un número entero.")
+    except Exception as e:
+        print(f"Ocurrió un error inesperado: {e}")

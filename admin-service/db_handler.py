@@ -212,3 +212,68 @@ def add_auto_backup_job(job_name, source_path, destination_structure, frequency_
     finally:
         if conn:
             conn.close()
+
+def get_instance_files_for_deletion(instance_id):
+    """
+    Obtiene la estructura de la instancia y la lista de rutas relativas de sus archivos.
+    """
+    conn = get_db_connection()
+    if conn is None:
+        return None, []
+
+    structure = None
+    file_paths = []
+    try:
+        with conn.cursor() as cur:
+            # Obtener la estructura de la instancia
+            cur.execute("SELECT user_defined_structure FROM BackupInstances WHERE id = %s", (instance_id,))
+            structure_result = cur.fetchone()
+            if not structure_result:
+                return None, [] # Instancia no encontrada
+            structure = structure_result[0]
+
+            # Obtener las rutas relativas de los archivos
+            cur.execute("SELECT path_within_source FROM BackedUpFiles WHERE backup_instance_id = %s", (instance_id,))
+            files_results = cur.fetchall()
+            file_paths = [row[0] for row in files_results]
+        
+        return structure, file_paths
+    except Exception as e:
+        print(f"[DBHandler] Error al obtener archivos de instancia {instance_id} para eliminación: {e}", flush=True)
+        return None, [] # Error durante la consulta
+    finally:
+        if conn:
+            conn.close()
+
+def delete_backup_instance_metadata(instance_id):
+    """
+    Elimina una instancia de respaldo y sus archivos asociados de la base de datos.
+    La FK con ON DELETE CASCADE en BackedUpFiles se encarga de los archivos.
+    """
+    conn = get_db_connection()
+    if conn is None:
+        return False, "No se pudo conectar a la base de datos."
+
+    try:
+        with conn.cursor() as cur:
+            # Primero verificar si la instancia existe para dar un mensaje más claro
+            cur.execute("SELECT id FROM BackupInstances WHERE id = %s", (instance_id,))
+            if not cur.fetchone():
+                return False, f"No se encontró ninguna instancia de respaldo con ID {instance_id}."
+
+            # Eliminar la instancia. Los BackedUpFiles se borrarán por CASCADE.
+            cur.execute("DELETE FROM BackupInstances WHERE id = %s", (instance_id,))
+            conn.commit()
+            
+            if cur.rowcount > 0:
+                return True, f"Metadatos del respaldo ID {instance_id} eliminados exitosamente."
+            else:
+                # Esto no debería ocurrir si la verificación anterior pasó, pero por si acaso.
+                return False, f"No se eliminaron metadatos para el respaldo ID {instance_id} (posiblemente ya no existía)."
+    except Exception as e:
+        print(f"[DBHandler] Error al eliminar metadatos del respaldo ID {instance_id}: {e}", flush=True)
+        conn.rollback()
+        return False, f"Error en la base de datos al eliminar metadatos del respaldo ID {instance_id}: {str(e)}"
+    finally:
+        if conn:
+            conn.close()

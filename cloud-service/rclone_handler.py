@@ -128,3 +128,37 @@ def download_file_content_as_base64(remote_name, cloud_path):
                 print(f"[RcloneHandler] Archivo temporal {temp_local_download_path} eliminado.", flush=True)
             except Exception as e_del:
                 print(f"[RcloneHandler] Error al eliminar archivo temporal {temp_local_download_path}: {e_del}", flush=True)
+
+def delete_file_from_remote(remote_name, cloud_path):
+    """
+    Elimina un archivo específico de la nube usando la API de Rclone.
+    """
+    api_endpoint = "http://localhost:5572/operations/deletefile"
+    api_user = os.getenv("RCLONE_API_USER")
+    api_pass = os.getenv("RCLONE_API_PASS")
+
+    payload = {
+        "fs": f"{remote_name}:",
+        "remote": cloud_path
+    }
+    
+    try:
+        print(f"[RcloneHandler] Solicitando eliminación de nube: {remote_name}:{cloud_path}", flush=True)
+        response = requests.post(api_endpoint, auth=(api_user, api_pass), json=payload)
+        response.raise_for_status() # Lanza excepción para errores HTTP 4xx/5xx
+        # Rclone devuelve un cuerpo vacío en éxito para deletefile
+        print(f"[RcloneHandler] Archivo '{cloud_path}' eliminado exitosamente de '{remote_name}'.", flush=True)
+        return True, f"Archivo '{cloud_path}' eliminado exitosamente de '{remote_name}'."
+    except requests.exceptions.HTTPError as e:
+        # Intentar obtener más detalles del error de Rclone si es posible
+        error_details = e.response.text
+        print(f"[RcloneHandler] Error HTTP de API Rclone al eliminar '{cloud_path}': {e.response.status_code} - {error_details}", flush=True)
+
+        # Se asume que un error HTTP significa que no se pudo confirmar la eliminación.
+        return False, f"Error de API Rclone al eliminar '{cloud_path}': {e.response.status_code} - {error_details}"
+    except requests.exceptions.RequestException as e:
+        print(f"[RcloneHandler] Error de comunicación con API Rclone al eliminar '{cloud_path}': {e}", flush=True)
+        return False, f"Error de comunicación con API Rclone al eliminar '{cloud_path}': {str(e)}"
+    except Exception as e:
+        print(f"[RcloneHandler] Error inesperado durante eliminación de nube para '{cloud_path}': {e}", flush=True)
+        return False, f"Error inesperado durante eliminación de nube para '{cloud_path}': {str(e)}"

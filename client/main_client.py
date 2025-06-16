@@ -1,6 +1,6 @@
 import os
 from handlers.cloud_handler import handle_cloud_config
-from handlers.admin_handler import handle_list_backups, handle_configure_auto_backup
+from handlers.admin_handler import handle_list_backups, handle_configure_auto_backup, handle_delete_backup
 from handlers.backup_handler import handle_create_backup
 from handlers.restore_handler import handle_restore_backup
 
@@ -16,6 +16,7 @@ def show_menu():
     print("3. Crear nuevo respaldo (manual)")
     print("4. Configurar nuevo respaldo automático")
     print("5. Restaurar respaldo")
+    print("6. Eliminar respaldo existente")
     print("9. Salir")
     return input("Selecciona una opción: ")
 
@@ -38,6 +39,8 @@ def run_interactive_mode(bus_host, bus_port):
                 handle_configure_auto_backup(bus_host, bus_port)
             elif choice == '5':
                 handle_restore_backup(bus_host, bus_port)
+            elif choice == '6':
+                handle_delete_backup(bus_host, bus_port)
             elif choice == '9':
                 print("Cliente terminado por el usuario.", flush=True)
                 break

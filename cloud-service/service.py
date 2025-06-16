@@ -1,8 +1,9 @@
 # cloud-service/service.py
 import os
 import time
+import json
 from bus_connector import ServiceConnector
-from rclone_handler import create_remote, upload_file, download_file_content_as_base64
+from rclone_handler import create_remote, upload_file, download_file_content_as_base64, delete_file_from_remote
 
 # --- Configuración del servicio ---
 BUS_HOST = os.getenv("BUS_HOST")
@@ -87,6 +88,43 @@ def process_request(data_received):
             print(f"[ServiceLogic] Error inesperado procesando descarga: {e}", flush=True)
             return f"Error: Error interno del servidor procesando descarga: {str(e)}"
 
+    elif command == "delete_files":
+        try:
+            # Espera: delete_files|{"files": ["path1_on_remote", "path2_on_remote"]}
+            _, json_payload_str = parts
+            payload = json.loads(json_payload_str)
+            files_to_delete = payload.get("files")
+
+            if not isinstance(files_to_delete, list):
+                return "Error: El payload para delete_files debe contener una lista de 'files'."
+
+            provider = get_active_provider()
+            if not provider:
+                return "Error: No hay proveedor de nube configurado."
+            
+            remote_name = f"{provider}_remote"
+            all_successful = True
+            errors = []
+
+            for cloud_file_path in files_to_delete:
+                print(f"[ServiceLogic] Solicitud de eliminación para '{remote_name}:{cloud_file_path}'...", flush=True)
+                success, message = delete_file_from_remote(remote_name, cloud_file_path)
+                if not success:
+                    all_successful = False
+                    errors.append(message)
+            
+            if all_successful:
+                return f"Todos los {len(files_to_delete)} archivos solicitados procesados para eliminación."
+            else:
+                # Devolver un error general si alguna eliminación falló.
+                return f"Error: Fallaron algunas eliminaciones en la nube. Errores: {'; '.join(errors)}"
+        except json.JSONDecodeError:
+            return "Error: Payload JSON malformado para delete_files."
+        except ValueError:
+            return "Error: Formato de comando de delete_files incorrecto."
+        except Exception as e:
+            print(f"[ServiceLogic] Error inesperado procesando delete_files: {e}", flush=True)
+            return f"Error: Error interno del servidor procesando delete_files: {str(e)}"
     else:
         return f"Comando '{command}' no reconocido."
 
