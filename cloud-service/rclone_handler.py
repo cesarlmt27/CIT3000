@@ -77,3 +77,54 @@ def upload_file(remote_name, cloud_path, file_content_b64):
         # Asegurarse de borrar el archivo temporal
         if os.path.exists(temp_local_path):
             os.remove(temp_local_path)
+
+def download_file_content_as_base64(remote_name, cloud_path):
+    """
+    Descarga un archivo desde la nube y devuelve su contenido como Base64.
+    Lo hace copiando el archivo a una ubicación temporal en el contenedor del cloud-service,
+    leyéndolo, y luego eliminándolo.
+    """
+    api_user = os.getenv("RCLONE_API_USER")
+    api_pass = os.getenv("RCLONE_API_PASS")
+    
+    # Usar un nombre de archivo temporal único para evitar colisiones si hay descargas concurrentes
+    # (aunque este servicio es de un solo hilo por ahora)
+    temp_filename = f"temp_download_{os.path.basename(cloud_path)}_{os.urandom(4).hex()}"
+    temp_local_download_path = f"/data/{temp_filename}" # /data es el volumen de rclone_data
+
+    copy_payload = {
+        "srcFs": f"{remote_name}:", # ej: "mega_remote:"
+        "srcRemote": cloud_path,    # ej: "backups/documentos/file.txt"
+        "dstFs": "/data/",          # Directorio local dentro del contenedor de cloud-service
+        "dstRemote": temp_filename  # Nombre del archivo en /data
+    }
+    copy_endpoint = "http://localhost:5572/operations/copyfile"
+    
+    try:
+        print(f"[RcloneHandler] Copiando desde nube: {remote_name}:{cloud_path} a local {temp_local_download_path}", flush=True)
+        response = requests.post(copy_endpoint, auth=(api_user, api_pass), json=copy_payload)
+        response.raise_for_status() 
+
+        if os.path.exists(temp_local_download_path):
+            with open(temp_local_download_path, "rb") as f:
+                file_bytes = f.read()
+            print(f"[RcloneHandler] Archivo leído desde {temp_local_download_path}, tamaño: {len(file_bytes)} bytes", flush=True)
+            return True, base64.b64encode(file_bytes).decode('utf-8')
+        else:
+            print(f"[RcloneHandler] Error: Archivo no encontrado en {temp_local_download_path} después de la copia.", flush=True)
+            return False, "Error: El archivo no se pudo copiar desde la nube al área temporal."
+
+    except requests.exceptions.RequestException as e:
+        error_text = e.response.text if e.response else str(e)
+        print(f"[RcloneHandler] Error de API Rclone al descargar: {error_text}", flush=True)
+        return False, f"Error de API Rclone al descargar: {error_text}"
+    except Exception as e:
+        print(f"[RcloneHandler] Error inesperado durante descarga de nube: {e}", flush=True)
+        return False, f"Error inesperado durante la descarga desde la nube: {str(e)}"
+    finally:
+        if os.path.exists(temp_local_download_path):
+            try:
+                os.remove(temp_local_download_path)
+                print(f"[RcloneHandler] Archivo temporal {temp_local_download_path} eliminado.", flush=True)
+            except Exception as e_del:
+                print(f"[RcloneHandler] Error al eliminar archivo temporal {temp_local_download_path}: {e_del}", flush=True)

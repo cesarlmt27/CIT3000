@@ -103,6 +103,9 @@ services:
       - database
       - bus
       - cloud-service
+    volumes:
+      - primary_backup_data:/sources/primary:ro
+      - secondary_backup_data:/sources/secondary:ro
 
   client: # Cliente para interactuar con el sistema
     build:
@@ -117,6 +120,10 @@ services:
       - soa-net
     depends_on:
       - bus
+      - admin-service
+      - backup-service
+      - cloud-service
+      - restore-service
 
 networks:
   soa-net:

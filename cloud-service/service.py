@@ -2,7 +2,7 @@
 import os
 import time
 from bus_connector import ServiceConnector
-from rclone_handler import create_remote, upload_file
+from rclone_handler import create_remote, upload_file, download_file_content_as_base64
 
 # --- Configuración del servicio ---
 BUS_HOST = os.getenv("BUS_HOST")
@@ -62,6 +62,31 @@ def process_request(data_received):
         except ValueError:
             return "Error: Formato de comando de subida incorrecto."
     
+    elif command == "download":
+        try:
+            # Espera: download|cloud_path_on_remote
+            _, cloud_file_path = parts
+            provider = get_active_provider()
+            if not provider:
+                return "Error: No hay proveedor de nube configurado."
+            
+            remote_name = f"{provider}_remote"
+            print(f"[ServiceLogic] Solicitud de descarga para '{remote_name}:{cloud_file_path}'...", flush=True)
+            
+            success, content_or_error_msg = download_file_content_as_base64(remote_name, cloud_file_path)
+            
+            if success:
+                # content_or_error_msg es el contenido en base64
+                # El bus espera una cadena. El cliente que recibe debe saber que es base64.
+                return content_or_error_msg 
+            else:
+                return f"Error: {content_or_error_msg}"
+        except ValueError:
+            return "Error: Formato de comando de descarga incorrecto."
+        except Exception as e:
+            print(f"[ServiceLogic] Error inesperado procesando descarga: {e}", flush=True)
+            return f"Error: Error interno del servidor procesando descarga: {str(e)}"
+
     else:
         return f"Comando '{command}' no reconocido."
 
